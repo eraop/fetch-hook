@@ -45,10 +45,7 @@ hookFetch({
 
 ```
 > url:http://localhost:9001/api/notice/unread/count?_token=test
-
-  
-
-
+```
 
 ## API
 
