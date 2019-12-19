@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>fetch-hook — Interactive Playground</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="../dist/index.global.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg: #0a0a0f;
+        --surface: #12121a;
+        --surface-alt: #1a1a26;
+        --border: #2a2a3a;
+        --text: #e8e6f0;
+        --text-dim: #7b7890;
+        --accent: #6dff8b;
+        --accent-glow: rgba(109, 255, 139, 0.15);
+        --accent-dim: #3da854;
+        --red: #ff6b6b;
+        --orange: #ffb86c;
+        --blue: #8be9fd;
+        --purple: #bd93f9;
+        --yellow: #f1fa8c;
+        --radius: 12px;
+        --mono: "SF Mono", "Cascadia Code", "Fira Code", "Menlo", "Consolas", monospace;
+        --sans: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* ---- Noise overlay ---- */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        pointer-events: none;
+        opacity: 0.025;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px;
+      }
+
+      /* ---- Layout ---- */
+      .shell {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 60px 24px 80px;
+      }
+
+      /* ---- Hero ---- */
+      .hero {
+        text-align: center;
+        margin-bottom: 56px;
+        animation: fadeUp 0.8s ease-out;
+      }
+
+      .hero-badge {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 6px 14px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--accent);
+        margin-bottom: 20px;
+      }
+
+      .hero h1 {
+        font-size: clamp(2.4rem, 6vw, 3.6rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        background: linear-gradient(135deg, var(--text) 40%, var(--accent) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero p {
+        margin-top: 14px;
+        color: var(--text-dim);
+        font-size: 1.05rem;
+        font-weight: 300;
+        max-width: 480px;
+        margin-inline: auto;
+        line-height: 1.6;
+      }
+
+      .hero-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 16px;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        padding: 6px 16px;
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
+
+      .hero-link:hover {
+        color: var(--text);
+        border-color: var(--text-dim);
+      }
+
+      .hero-link svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* ---- Card ---- */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px;
+        margin-bottom: 20px;
+        position: relative;
+        animation: fadeUp 0.8s ease-out both;
+      }
+
+      .card:nth-child(2) { animation-delay: 0.1s; }
+      .card:nth-child(3) { animation-delay: 0.2s; }
+      .card:nth-child(4) { animation-delay: 0.3s; }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .card-header .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent-glow);
+      }
+
+      .card-header h2 {
+        font-size: 0.8rem;
+        font-family: var(--mono);
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+      }
+
+      /* ---- Code block ---- */
+      .code-block {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        line-height: 1.75;
+        overflow-x: auto;
+        white-space: pre;
+        color: var(--text);
+        tab-size: 2;
+      }
+
+      .code-block .kw { color: var(--purple); }
+      .code-block .fn { color: var(--accent); }
+      .code-block .str { color: var(--yellow); }
+      .code-block .cm { color: var(--text-dim); font-style: italic; }
+      .code-block .op { color: var(--red); }
+      .code-block .prop { color: var(--blue); }
+
+      /* ---- Controls ---- */
+      .controls {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        font-weight: 500;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: var(--bg);
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 0 24px var(--accent-glow), 0 4px 12px rgba(0, 0, 0, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+
+      .btn-outline {
+        background: transparent;
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+
+      .btn-outline:hover {
+        border-color: var(--text-dim);
+        color: var(--text);
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-left: auto;
+      }
+
+      .status-indicator .pip {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text-dim);
+        transition: background 0.3s;
+      }
+
+      .status-indicator.active .pip {
+        background: var(--accent);
+        box-shadow: 0 0 6px var(--accent);
+        animation: pulse 2s infinite;
+      }
+
+      .status-indicator.active {
+        color: var(--accent-dim);
+      }
+
+      /* ---- Console ---- */
+      .console {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        min-height: 180px;
+        max-height: 360px;
+        overflow-y: auto;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        line-height: 1.7;
+      }
+
+      .console-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        z-index: 1;
+      }
+
+      .console-toolbar span {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .console-clear {
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        background: none;
+        border: 1px solid var(--border);
+        padding: 3px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .console-clear:hover {
+        color: var(--text);
+        border-color: var(--text-dim);
+      }
+
+      .console-body {
+        padding: 12px 16px;
+      }
+
+      .log-line {
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        word-break: break-all;
+        white-space: pre-wrap;
+        animation: logSlide 0.25s ease-out;
+      }
+
+      .log-line:last-child {
+        border-bottom: none;
+      }
+
+      .log-line .log-ts {
+        color: var(--text-dim);
+        margin-right: 8px;
+        font-size: 0.7rem;
+      }
+
+      .log-line.log-hook { color: var(--accent); }
+      .log-line.log-info { color: var(--blue); }
+      .log-line.log-warn { color: var(--orange); }
+      .log-line.log-error { color: var(--red); }
+
+      .empty-state {
+        color: var(--text-dim);
+        text-align: center;
+        padding: 40px 0;
+        font-size: 0.82rem;
+      }
+
+      /* ---- Animations ---- */
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+
+      @keyframes logSlide {
+        from {
+          opacity: 0;
+          transform: translateX(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ---- Scrollbar ---- */
+      ::-webkit-scrollbar { width: 5px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <!-- Hero -->
+      <header class="hero">
+        <div class="hero-badge">@eraop/fetch-hook</div>
+        <h1>Fetch Hook</h1>
+        <p>Intercept, transform, and debug every fetch request with a simple hook — zero dependencies.</p>
+        <a class="hero-link" href="https://github.com/eraop/fetch-hook" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </header>
+
+      <!-- Hook Config -->
+      <div class="card">
+        <div class="card-header">
+          <span class="dot"></span>
+          <h2>Hook Configuration</h2>
+        </div>
+        <div class="code-block"><span class="fn">hookFetch</span>({
+  <span class="prop">urlHook</span>: <span class="kw">function</span> (<span class="prop">url</span>) {
+    <span class="cm">// Rewrite /get → /post</span>
+    <span class="prop">url</span> <span class="op">=</span> <span class="prop">url</span>.<span class="fn">replace</span>(<span class="str">"/get"</span>, <span class="str">"/post"</span>)
+    <span class="kw">return</span> <span class="prop">url</span>
+  },
+  <span class="prop">optionsHook</span>: <span class="kw">function</span> (<span class="prop">opts</span>) {
+    <span class="cm">// Force POST + inject custom header</span>
+    <span class="prop">opts</span>.<span class="prop">method</span> <span class="op">=</span> <span class="str">"POST"</span>
+    <span class="prop">opts</span>.<span class="prop">headers</span> <span class="op">=</span> { ...<span class="prop">opts</span>.<span class="prop">headers</span>, <span class="str">"X-Client"</span>: <span class="str">"fetch-hook-demo"</span> }
+    <span class="kw">return</span> <span class="prop">opts</span>
+  }
+})</div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card">
+        <div class="card-header">
+          <span class="dot"></span>
+          <h2>Playground</h2>
+        </div>
+        <div class="controls">
+          <button class="btn btn-primary" id="btnFetch" onclick="fetchTest()">
+            ▸ Send Request
+          </button>
+          <button class="btn btn-outline" id="btnToggle" onclick="toggleHook()">
+            Unhook
+          </button>
+          <div class="status-indicator active" id="status">
+            <span class="pip"></span>
+            <span id="statusText">Hook active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Console -->
+      <div class="card">
+        <div class="card-header">
+          <span class="dot"></span>
+          <h2>Console Output</h2>
+        </div>
+        <div class="console">
+          <div class="console-toolbar">
+            <span>logs</span>
+            <button class="console-clear" onclick="clearConsole()">Clear</button>
+          </div>
+          <div class="console-body" id="consoleBody">
+            <div class="empty-state">Press "Send Request" to see intercepted output…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ---------- State ----------
+      let hooked = true
+
+      // ---------- Hook setup ----------
+      function installHook() {
+        FetchHook.hookFetch({
+          urlHook: function (url) {
+            url = url.replace('/get', '/post')
+            log('hook', '⇢ urlHook  rewrote → ' + url)
+            return url
+          },
+          optionsHook: function (opts) {
+            if (opts) {
+              opts.method = 'POST'
+              opts.headers = {
+                ...(opts.headers || {}),
+                'X-Client': 'fetch-hook-demo',
+              }
+            }
+            log('hook', '⇢ optionsHook  method=' + (opts && opts.method) + '  headers=' + JSON.stringify(opts && opts.headers))
+            return opts
+          },
+        })
+      }
+
+      installHook()
+
+      // ---------- Actions ----------
+      function fetchTest() {
+        const btn = document.getElementById('btnFetch')
+        btn.textContent = '⏳ Sending…'
+        btn.disabled = true
+
+        log('info', '→ fetch("https://httpbin.org/get", { method: "GET" })')
+
+        fetch('https://httpbin.org/get', { method: 'GET' })
+          .then(function (res) {
+            log('info', '← ' + res.status + ' ' + res.statusText + '  url=' + res.url)
+            return res.text()
+          })
+          .then(function (body) {
+            try {
+              const data = JSON.parse(body)
+              log('info', '← body:\n' + JSON.stringify(data, null, 2))
+            } catch (_) {
+              log('info', '← body:\n' + body)
+            }
+          })
+          .catch(function (err) {
+            log('error', '✗ ' + err.message)
+          })
+          .finally(function () {
+            btn.textContent = '▸ Send Request'
+            btn.disabled = false
+          })
+      }
+
+      function toggleHook() {
+        const btn = document.getElementById('btnToggle')
+        const status = document.getElementById('status')
+        const statusText = document.getElementById('statusText')
+
+        if (hooked) {
+          FetchHook.unHookFetch()
+          hooked = false
+          btn.textContent = 'Re-hook'
+          status.classList.remove('active')
+          statusText.textContent = 'Hook removed'
+          log('warn', '⊘ unHookFetch() — original fetch restored')
+        } else {
+          installHook()
+          hooked = true
+          btn.textContent = 'Unhook'
+          status.classList.add('active')
+          statusText.textContent = 'Hook active'
+          log('hook', '✓ hookFetch() — hook reinstalled')
+        }
+      }
+
+      // ---------- Console ----------
+      function log(type, message) {
+        const body = document.getElementById('consoleBody')
+        // remove empty state
+        const empty = body.querySelector('.empty-state')
+        if (empty) empty.remove()
+
+        const line = document.createElement('div')
+        line.className = 'log-line log-' + type
+
+        const ts = document.createElement('span')
+        ts.className = 'log-ts'
+        const now = new Date()
+        ts.textContent = now.toLocaleTimeString('en-GB', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0')
+
+        line.appendChild(ts)
+        line.appendChild(document.createTextNode(message))
+        body.appendChild(line)
+        body.scrollTop = body.scrollHeight
+      }
+
+      function clearConsole() {
+        const body = document.getElementById('consoleBody')
+        body.innerHTML = '<div class="empty-state">Console cleared.</div>'
+      }
+    </script>
+  </body>
+</html>
