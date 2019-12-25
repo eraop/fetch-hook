@@ -5,20 +5,23 @@
  **/
 module.exports = function (ob) {
     var realFetch = "RealFetch"
-    ob.hookFetch = function (obj) {
+    ob.hookFetch = function (proxy) {
         // Avoid double hook
         window[realFetch] = window[realFetch] || fetch
         // 拦截原始的fetch方法 
         window.fetch = function (url, opts) {
-            if (typeof obj.urlHook === "function") {
-                url = obj.urlHook(url)
+            // fetch url拦截
+            if (typeof proxy.urlHook === "function") {
+                url = proxy.urlHook.call(this, url)
+                console.log(url)
+            }
+            // fetch options拦截
+            if (typeof proxy.optionsHook === "function") {
+                opts = proxy.optionsHook.call(this, opts)
+                console.log(opts)
             }
             // 定义新的fetch方法，封装原有的fetch方法
-            return window[realFetch](url, opts).then(
-                res => {
-                    return res
-                }
-            )
+            return window[realFetch](url, opts)
         }
     }
 

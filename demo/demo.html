@@ -21,24 +21,42 @@
   </style>
   <body>
     <div
-      style="background: #000; font-size: 38px; color: #ffef68; text-shadow: 2px 2px 10px #ffef68; width: 400px; height: 400px; text-align: center"
+      style="background: #000; font-size: 38px; color: #ffef68; text-shadow: 2px 2px 10px #ffef68; width: 400px; height: 100px; text-align: center"
     >
-      <div style="padding-top: 100px">Fetch Hook !</div>
+      <div style="padding-top: 30px">Fetch Hook !</div>
+      <button onclick="fetchTest()">Fetch Test</button>
+      <div id="tips"></div>
     </div>
-    open console panel to view log.
     <script>
       hookFetch({
-        urlHook: function(input) {
-          if (input.indexOf('?') !== -1) {
-            input += '&_token=test'
+        urlHook: function(url) {
+          if (url.indexOf('?') !== -1) {
+            url += '&_token=test'
           } else {
-            input += '?_token=test'
+            url += '?_token=test'
           }
-          return input
+          return url
+        },
+        optionsHook: function(opts) {
+          if (opts && opts.method) {
+            opts.method = 'POST'
+          }
+          console.log(opts)
+          return opts
         }
       })
 
-      fetch('http://172.16.3.187:9001/api/notice/unread/count').then(res=>{console.log(res)})
+      function fetchTest() {
+        var myInit = {
+          method: 'GET',
+        }
+
+        fetch('http://172.16.3.187:9001/api/getVerifyCode', myInit).then(
+          res => {
+            console.log(res)
+          }
+        )
+      }
     </script>
   </body>
 </html>

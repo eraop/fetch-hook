@@ -17,28 +17,39 @@ fetch-hook是一个用于拦截Fetch全局对象的库，它可以在fetch对象
   ```
  
 
-### 拦截`fetch`回调和方法
+### 拦截`fetch`回调和方法:urlHook、optionsHook
 
 ```javascript
 hookFetch({
-  urlHook: function(input) {
-    if (input.indexOf('?') !== -1) {
-      input += '&_token=test'
+  urlHook: function(url) {
+    if (url.indexOf('?') !== -1) {
+      url += '&_token=test'
     } else {
-      input += '?_token=test'
+      url += '?_token=test'
     }
-    console.log('url：'+input)
-    return input
+    console.log('url：'+url)
+    return url
+  },
+  optionsHook: function(opts) {
+    if (opts && opts.method) {
+      opts.method = 'POST'
+    }
+    console.log(opts)
+    return opts
   }
 })
 
 
 ```
+urlHook：url拦截（可选）
+optionsHook：options拦截（可选）
 这样拦截就生效了，拦截的全局的`fetch`，所以，无论你使用的是哪种JavaScript http请求库，只要最终是使用`fetch`发起的网络请求，那么拦截都会生效。下面我们用jQuery发起一个请求：
 
 ```javascript
 // 获取当前页面的源码(Chrome中测试)
-  fetch('http://localhost:9001/api/notice/unread/count').then(res=>{console.log(res)})
+  fetch('http://localhost:9001/api/notice/unread/count', {
+    method: 'GET',
+  }).then(res=>{console.log(res)})
 ```
 
 输出:

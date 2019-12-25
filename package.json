@@ -23,6 +23,7 @@
   },
   "scripts": {
     "dev": "webpack-dev-server --mode development --history-api-fallback --config webpack.config.js",
+    "dev": "webpack --progress --hide-modules --mode development --config webpack.config.js",
     "build": "webpack --progress --hide-modules --mode production --config webpack.config.js"
   },
   "devDependencies": {
