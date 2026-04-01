@@ -1,34 +1,56 @@
 {
-  "name": "fetch-hook",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@eraop/fetch-hook",
+  "version": "1.1.0",
+  "description": "A lightweight library for hooking and intercepting the global fetch object.",
+  "scripts": {
+    "build": "tsup",
+    "dev": "concurrently \"tsup --watch\" \"wait-on dist/index.global.js && open http://localhost:3210/demo/demo.html\" \"serve . -l 3210\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "fetch",
+    "fetch hook",
+    "hook fetch",
+    "fetch-hook",
+    "intercept fetch",
+    "fetch interceptor"
+  ],
   "author": {
     "name": "eraop",
     "email": "493214262@qq.com",
     "url": "https://github.com/eraop"
   },
-  "description": "Hooking Javascript Fetch object。",
-  "keywords": [
-    "fetch hook",
-    "hook fetch",
-    "fetch-hook",
-    "intercept fetch"
-  ],
-  "respository": {
+  "license": "MIT",
+  "repository": {
     "type": "git",
     "url": "https://github.com/eraop/fetch-hook"
   },
   "bugs": {
     "url": "https://github.com/eraop/fetch-hook/issues"
   },
-  "scripts": {
-    "dev": "webpack-dev-server --mode development --history-api-fallback --config webpack.config.js",
-    "build": "webpack --progress --hide-modules --mode production --config webpack.config.js"
+  "homepage": "https://github.com/eraop/fetch-hook#readme",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
   "devDependencies": {
-    "webpack": "^4.26.0",
-    "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.10",
-    "webpack-merge": "^4.1.4"
+    "concurrently": "^9.0.0",
+    "serve": "^14.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "wait-on": "^8.0.0"
   }
 }
