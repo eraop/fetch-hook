@@ -1,85 +1,203 @@
-中文简体|[English](./README-EN.md)
-
 # fetch-hook
 
-## 简介
+English &nbsp;|&nbsp; [中文](#中文)
 
-fetch-hook是一个用于拦截Fetch全局对象的库，它可以在fetch对象发起请求之前和收到响应内容之后获得处理权。通过它你可以在底层对请求进行统一的操作。
+---
 
-## 使用
+## English
+
+### Introduction
+
+`fetch-hook` is a tiny JavaScript / TypeScript library that lets you intercept and proxy the global `fetch` function. It enables you to uniformly transform the request URL or options before every request is sent — useful for adding auth tokens, injecting headers, logging, etc.
+
+Supports **ESM / CommonJS / Browser Script tag** and ships with full TypeScript type declarations.
+
+**[→ Live Demo](https://eraop.github.io/fetch-hook/)**
+
+### Installation
+
+```bash
+npm install @eraop/fetch-hook
+```
+
+### Usage
+
+#### ESM (recommended)
+
+```ts
+import { hookFetch, unHookFetch } from '@eraop/fetch-hook'
+
+hookFetch({
+  // Intercept and modify the request URL (optional)
+  urlHook(url) {
+    const separator = String(url).includes('?') ? '&' : '?'
+    return url + separator + '_token=my-token'
+  },
+  // Intercept and modify the request options (optional)
+  optionsHook(opts) {
+    return {
+      ...opts,
+      headers: {
+        ...opts?.headers,
+        'X-Custom-Header': 'hello',
+      },
+    }
+  },
+})
+
+// Remove the hook and restore the original fetch
+unHookFetch()
+```
+
+#### CommonJS
+
+```js
+const { hookFetch, unHookFetch } = require('@eraop/fetch-hook')
+```
+
+#### Browser Script Tag (IIFE)
+
+```html
+<script src="https://unpkg.com/@eraop/fetch-hook/dist/index.global.js"></script>
+<script>
+  FetchHook.hookFetch({
+    urlHook(url) {
+      return url + '?v=1'
+    },
+  })
+</script>
+```
+
+### API
+
+#### `hookFetch(proxy): boolean`
+
+Hooks the global `fetch`. After calling this, every `fetch()` call passes through your configured proxy callbacks.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `proxy.urlHook` | `(url: RequestInfo \| URL) => RequestInfo \| URL` | Optional URL interceptor |
+| `proxy.optionsHook` | `(opts?: RequestInit) => RequestInit \| undefined` | Optional options interceptor |
+
+Returns `true` on success, `false` if the environment has no `fetch`.
+
+#### `unHookFetch(): void`
+
+Removes the hook and restores the original `fetch`. Safe to call even when no hook is active (no-op).
+
+### Type Definitions
+
+```ts
+interface FetchProxy {
+  urlHook?: (url: RequestInfo | URL) => RequestInfo | URL
+  optionsHook?: (options: RequestInit | undefined) => RequestInit | undefined
+}
+```
+
+### Notes
+
+- Requires an environment with native `fetch` support (modern browsers or Node.js 18+).
+- Calling `hookFetch` multiple times replaces the current proxy but always restores to the one true original `fetch` — no double-wrapping.
+
+### License
+
+MIT © [eraop](https://github.com/eraop)
+
+---
+
+## 中文
+
+[↑ English](#english)
+
+### 简介
+
+\`fetch-hook\` 是一个轻量的 JavaScript/TypeScript 库，用于拦截和代理全局 \`fetch\` 函数。通过它，你可以在请求发出前统一修改请求 URL 或请求配置（如自动附加 token、修改请求头等）。
+
+支持 **ESM / CommonJS / 浏览器 Script 标签** 三种使用方式，并提供完整的 TypeScript 类型声明。
+
+**[→ 在线 Demo](https://eraop.github.io/fetch-hook/)**
 
 ### 安装
 
-- 引入
+\`\`\`bash
+npm install @eraop/fetch-hook
+\`\`\`
 
-  ```html
-  <script src="../dist/ajaxhook.min.js"></script>
-  ```
- 
+### 使用
 
-### 拦截`fetch`回调和方法:urlHook、optionsHook
+#### ESM（推荐）
 
-```javascript
+\`\`\`ts
+import { hookFetch, unHookFetch } from '@eraop/fetch-hook'
+
 hookFetch({
-  urlHook: function(url) {
-    if (url.indexOf('?') !== -1) {
-      url += '&_token=test'
-    } else {
-      url += '?_token=test'
-    }
-    console.log('url：'+url)
-    return url
+  // 拦截并修改请求 URL（可选）
+  urlHook(url) {
+    const separator = String(url).includes('?') ? '&' : '?'
+    return url + separator + '_token=my-token'
   },
-  optionsHook: function(opts) {
-    if (opts && opts.method) {
-      opts.method = 'POST'
+  // 拦截并修改请求选项（可选）
+  optionsHook(opts) {
+    return {
+      ...opts,
+      headers: {
+        ...opts?.headers,
+        'X-Custom-Header': 'hello',
+      },
     }
-    console.log(opts)
-    return opts
-  }
+  },
 })
 
+// 取消拦截，恢复原始 fetch
+unHookFetch()
+\`\`\`
 
-```
-urlHook：url拦截（可选）
-optionsHook：options拦截（可选）
-这样拦截就生效了，拦截的全局的`fetch`，所以，无论你使用的是哪种JavaScript http请求库，只要最终是使用`fetch`发起的网络请求，那么拦截都会生效。下面我们用jQuery发起一个请求：
+#### CommonJS
 
-```javascript
-// 获取当前页面的源码(Chrome中测试)
-  fetch('http://localhost:9001/api/notice/unread/count', {
-    method: 'GET',
-  }).then(res=>{console.log(res)})
-```
+\`\`\`js
+const { hookFetch, unHookFetch } = require('@eraop/fetch-hook')
+\`\`\`
 
-输出:
+#### 浏览器 Script 标签（IIFE）
 
-```
-> url:http://localhost:9001/api/notice/unread/count?_token=test
-```
+\`\`\`html
+<script src="https://unpkg.com/@eraop/fetch-hook/dist/index.global.js"></script>
+<script>
+  FetchHook.hookFetch({
+    urlHook(url) {
+      return url + '?v=1'
+    },
+  })
+</script>
+\`\`\`
 
-## API
+### API
 
-### hookFetch(proxy)
+#### \`hookFetch(proxy): boolean\`
 
-拦截全局`fetch`，此方法调用后，浏览器原生的`fetch`将会被代理，直到调用`unHookFetch()`后才会取消代理。
+拦截全局 \`fetch\`。调用后所有通过 \`fetch\` 发起的请求都会经过你配置的 hooks 处理。
 
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| \`proxy.urlHook\` | \`(url: RequestInfo \| URL) => RequestInfo \| URL\` | URL 拦截回调（可选） |
+| \`proxy.optionsHook\` | \`(opts?: RequestInit) => RequestInit \| undefined\` | 请求选项拦截回调（可选） |
 
-### unHookFetch()
+返回 \`true\` 表示安装成功；返回 \`false\` 表示当前环境不支持 \`fetch\`。
 
-- 取消拦截；取消后`fetch`将不会再被代理
+#### \`unHookFetch(): void\`
 
+取消拦截，恢复原始 \`fetch\`。未安装 hook 时调用此方法为空操作，不会报错。
 
+### 类型定义
 
-## 注意
+\`\`\`ts
+interface FetchProxy {
+  urlHook?: (url: RequestInfo | URL) => RequestInfo | URL
+  optionsHook?: (options: RequestInit | undefined) => RequestInit | undefined
+}
+\`\`\`
 
-- 本库需要在支持ES5的浏览器环境中运行(不支持IE8)，但本库并不依赖ES6新特性。
+### 注意事项
 
-## 最后
-
-只是个人研究所用，实现了一个fetch拦截的核心，并非一个完整可商用的项目。如果你喜欢，欢迎Star，如果有问题，欢迎提Issue。
-
-
-
-
-
+- 需要在支持原生 \`fetch\` 的浏览器或 Node.js 18+ 环境中运行。
+- \`hookFetch\` 可多次调用（会替换当前 proxy），内部只保留一次对原始 \`fetch\` 的引用，不会出现重复嵌套。
