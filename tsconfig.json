@@ -3,6 +3,7 @@
     "target": "ES2018",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "ignoreDeprecations": "6.0",
     "lib": ["ES2018", "DOM"],
     "strict": true,
     "declaration": true,
