@@ -5,7 +5,10 @@
   "scripts": {
     "build": "tsup",
     "dev": "concurrently \"tsup --watch\" \"wait-on dist/index.global.js && open http://localhost:3210/demo/demo.html\" \"serve . -l 3210\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build",
+    "pack:check": "npm pack --dry-run",
+    "publish:npm": "npm publish --access public"
   },
   "keywords": [
     "fetch",
